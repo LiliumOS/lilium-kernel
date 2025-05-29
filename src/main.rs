@@ -1,25 +1,25 @@
-#![feature(naked_functions)]
+#![feature(allocator_api)]
 #![feature(never_type)]
+#![feature(abi_x86_interrupt)]
 #![no_std]
 #![no_main]
 
+extern crate alloc;
+
+mod apic;
 mod framebuffer;
 mod interrupt;
+mod keyboard;
+mod limine_requests;
 mod memory;
+mod prelude;
+mod util;
 
-use core::{arch::naked_asm, fmt::Write};
-
-use acpi::AcpiTables;
+use core::arch::naked_asm;
 use embedded_term::ConsoleOnGraphic;
 use framebuffer::Framebuffer;
-use limine::{
-    BaseRevision,
-    memory_map::EntryType,
-    request::{
-        FramebufferRequest, MemoryMapRequest, RequestsEndMarker, RequestsStartMarker, RsdpRequest,
-    },
-};
-use memory::BasicAcpiHandler;
+use limine::memory_map::EntryType;
+use limine_requests::{BASE_REVISION, FRAMEBUFFER_REQUEST, MEMORY_MAP_REQUEST};
 use talc::*;
 
 const ARENA_SIZE: usize = 0x200000;
@@ -38,30 +38,6 @@ static ALLOCATOR: Talck<spin::Mutex<()>, ClaimOnOom> = Talc::new(unsafe {
 })
 .lock();
 
-#[used]
-#[unsafe(link_section = ".requests")]
-static BASE_REVISION: BaseRevision = BaseRevision::new();
-
-#[used]
-#[unsafe(link_section = ".requests")]
-static FRAMEBUFFER_REQUEST: FramebufferRequest = FramebufferRequest::new();
-
-#[used]
-#[unsafe(link_section = ".requests")]
-static MEMORY_MAP_REQUEST: MemoryMapRequest = MemoryMapRequest::new();
-
-#[used]
-#[unsafe(link_section = ".requests")]
-static RSDP_REQUEST: RsdpRequest = RsdpRequest::new();
-
-#[used]
-#[unsafe(link_section = ".requests_start_marker")]
-static _START_MARKER: RequestsStartMarker = RequestsStartMarker::new();
-
-#[used]
-#[unsafe(link_section = ".requests_end_marker")]
-static _END_MARKER: RequestsEndMarker = RequestsEndMarker::new();
-
 static CONSOLE: spin::Once<spin::Mutex<ConsoleOnGraphic<Framebuffer<'static>>>> = spin::Once::new();
 
 #[macro_export]
@@ -77,24 +53,23 @@ macro_rules! println {
         CONSOLE.wait().lock().write_str("\n").unwrap();
     }};
     ($($arg:tt)*) => {{
-        writeln!(CONSOLE.wait().lock(), $($arg)*).unwrap();
+        use ::core::fmt::Write;
+        writeln!($crate::CONSOLE.wait().lock(), $($arg)*).unwrap();
     }};
 }
 
 #[unsafe(no_mangle)]
-#[naked]
+#[unsafe(naked)]
 unsafe extern "C" fn kmain() -> ! {
-    unsafe {
-        naked_asm!(
-            "lea rsp, [{STACK} + {STACK_SIZE} + rip]",
-            "call {kmain_real}",
-            "jmp {hcf}",
-            STACK = sym STACK,
-            STACK_SIZE = const STACK_SIZE,
-            kmain_real = sym kmain_real,
-            hcf = sym hcf,
-        );
-    }
+    naked_asm!(
+        "lea rsp, [{STACK} + {STACK_SIZE} + rip]",
+        "call {kmain_real}",
+        "jmp {hcf}",
+        STACK = sym STACK,
+        STACK_SIZE = const STACK_SIZE,
+        kmain_real = sym kmain_real,
+        hcf = sym hcf,
+    );
 }
 
 #[unsafe(no_mangle)]
@@ -141,16 +116,12 @@ fn kmain_real() -> ! {
         );
     }
 
-    let Some(rsdp_response) = RSDP_REQUEST.get_response() else {
-        hcf();
-    };
-    let acpi_tables =
-        unsafe { AcpiTables::from_rsdp(BasicAcpiHandler::new(), rsdp_response.address()) };
+    apic::init();
 
     hcf();
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), target_os = "none"))]
 #[panic_handler]
 fn rust_panic(info: &core::panic::PanicInfo) -> ! {
     println!("\x1b[31;1merror: the OS encountered a panic. {info}");
@@ -159,6 +130,7 @@ fn rust_panic(info: &core::panic::PanicInfo) -> ! {
 
 fn hcf() -> ! {
     loop {
+        // core::hint::spin_loop();
         unsafe {
             core::arch::asm!("hlt");
         }
