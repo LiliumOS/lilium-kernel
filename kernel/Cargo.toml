@@ -1,0 +1,22 @@
+[package]
+name = "os-for-fun"
+version = "0.1.0"
+edition.workspace = true
+
+[dependencies]
+acpi = "5.2.0"
+embedded-graphics-core = "0.4.0"
+embedded-term = { git = "https://github.com/rdrpenguin04/embedded-term" }
+limine = "0.4.0"
+los-api.workspace = true
+pc-keyboard = "0.8.0"
+spin = "0.10.0"
+talc = "4.4.2"
+x2apic = "0.5.0"
+x86_64 = "0.15.2"
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package.embedded-term]
+opt-level = 3

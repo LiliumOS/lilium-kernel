@@ -40,24 +40,6 @@ static ALLOCATOR: Talck<spin::Mutex<()>, ClaimOnOom> = Talc::new(unsafe {
 
 static CONSOLE: spin::Once<spin::Mutex<ConsoleOnGraphic<Framebuffer<'static>>>> = spin::Once::new();
 
-#[macro_export]
-macro_rules! print {
-    ($($arg:tt)*) => {{
-        write!(CONSOLE.wait().lock(), $($arg)*).unwrap();
-    }};
-}
-
-#[macro_export]
-macro_rules! println {
-    () => {{
-        CONSOLE.wait().lock().write_str("\n").unwrap();
-    }};
-    ($($arg:tt)*) => {{
-        use ::core::fmt::Write;
-        writeln!($crate::CONSOLE.wait().lock(), $($arg)*).unwrap();
-    }};
-}
-
 #[unsafe(no_mangle)]
 #[unsafe(naked)]
 unsafe extern "C" fn kmain() -> ! {
@@ -121,18 +103,15 @@ fn kmain_real() -> ! {
     hcf();
 }
 
-#[cfg(all(not(test), target_os = "none"))]
-#[panic_handler]
-fn rust_panic(info: &core::panic::PanicInfo) -> ! {
-    println!("\x1b[31;1merror: the OS encountered a panic. {info}");
-    hcf();
-}
-
-fn hcf() -> ! {
+extern "C" fn hcf_real() -> ! {
     loop {
         // core::hint::spin_loop();
         unsafe {
             core::arch::asm!("hlt");
         }
     }
+}
+
+extern "C" fn print_bytes(data: *const u8, len: usize) {
+    CONSOLE;
 }

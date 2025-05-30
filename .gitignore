@@ -1,4 +1,4 @@
 /target
 /ovmf
-kernel
+kernel.bin
 *.iso
