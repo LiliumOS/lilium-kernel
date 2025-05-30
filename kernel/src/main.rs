@@ -20,6 +20,7 @@ use embedded_term::ConsoleOnGraphic;
 use framebuffer::Framebuffer;
 use limine::memory_map::EntryType;
 use limine_requests::{BASE_REVISION, FRAMEBUFFER_REQUEST, MEMORY_MAP_REQUEST};
+use los_api::{hcf, println};
 use talc::*;
 
 const ARENA_SIZE: usize = 0x200000;
@@ -103,6 +104,7 @@ fn kmain_real() -> ! {
     hcf();
 }
 
+#[unsafe(no_mangle)]
 extern "C" fn hcf_real() -> ! {
     loop {
         // core::hint::spin_loop();
@@ -112,6 +114,10 @@ extern "C" fn hcf_real() -> ! {
     }
 }
 
+#[unsafe(no_mangle)]
 extern "C" fn print_bytes(data: *const u8, len: usize) {
-    CONSOLE;
+    CONSOLE
+        .wait()
+        .lock()
+        .write_bytes(unsafe { core::slice::from_raw_parts(data, len) });
 }

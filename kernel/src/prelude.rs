@@ -1,4 +1,4 @@
 #![allow(unused_imports)]
 
-pub use crate::{print, println};
+pub use los_api::{hcf, print, println};
 pub use core::fmt::Write;

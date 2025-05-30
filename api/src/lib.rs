@@ -34,7 +34,7 @@ fn rust_panic(info: &core::panic::PanicInfo) -> ! {
     hcf();
 }
 
-fn hcf() -> ! {
+pub fn hcf() -> ! {
     unsafe { hcf_real(); }
 }
 

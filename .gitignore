@@ -2,3 +2,4 @@
 /ovmf
 kernel.bin
 *.iso
+/iso_root
