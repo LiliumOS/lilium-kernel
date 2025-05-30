@@ -101,6 +101,8 @@ fn kmain_real() -> ! {
 
     apic::init();
 
+    println!("{:?}", limine_requests::MODULE_REQUEST.get_response().unwrap().modules()[0].path());
+
     hcf();
 }
 

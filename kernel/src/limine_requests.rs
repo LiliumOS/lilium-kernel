@@ -1,6 +1,6 @@
 use limine::{
     request::{
-        FramebufferRequest, HhdmRequest, MemoryMapRequest, RequestsEndMarker, RequestsStartMarker, RsdpRequest
+        FramebufferRequest, HhdmRequest, MemoryMapRequest, ModuleRequest, RequestsEndMarker, RequestsStartMarker, RsdpRequest
     }, BaseRevision
 };
 
@@ -19,6 +19,10 @@ pub static HHDM_REQUEST: HhdmRequest = HhdmRequest::new();
 #[used]
 #[unsafe(link_section = ".requests")]
 pub static MEMORY_MAP_REQUEST: MemoryMapRequest = MemoryMapRequest::new();
+
+#[used]
+#[unsafe(link_section = ".requests")]
+pub static MODULE_REQUEST: ModuleRequest = ModuleRequest::new();
 
 #[used]
 #[unsafe(link_section = ".requests")]
