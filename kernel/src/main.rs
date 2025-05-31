@@ -15,13 +15,17 @@ mod memory;
 mod prelude;
 mod util;
 
-use core::arch::naked_asm;
+use alloc::string::String;
+use core::{arch::naked_asm, slice};
+use elf_loader::{Loader, mmap::Mmap, object::ElfBinary};
 use embedded_term::ConsoleOnGraphic;
 use framebuffer::Framebuffer;
 use limine::memory_map::EntryType;
 use limine_requests::{BASE_REVISION, FRAMEBUFFER_REQUEST, MEMORY_MAP_REQUEST};
 use los_api::{hcf, println};
 use talc::*;
+
+use crate::limine_requests::MODULE_REQUEST;
 
 const ARENA_SIZE: usize = 0x200000;
 static mut ARENA: [u8; ARENA_SIZE] = [0; ARENA_SIZE];
@@ -101,9 +105,61 @@ fn kmain_real() -> ! {
 
     apic::init();
 
-    println!("{:?}", limine_requests::MODULE_REQUEST.get_response().unwrap().modules()[0].path());
+    let mut loader = Loader::<ElfMmapImpl>::new();
+
+    for module in MODULE_REQUEST.get_response().unwrap().modules() {
+        let lib = loader
+            .easy_load_dylib(ElfBinary::new(
+                &*String::from_utf8_lossy(module.path().to_bytes()),
+                unsafe { slice::from_raw_parts(module.addr(), module.size() as usize) },
+            ))
+            .unwrap();
+        let lib = lib.easy_relocate(core::iter::empty(), &|_| None).unwrap();
+        let module_init = unsafe { lib.get::<fn()>("module_init").unwrap() };
+        module_init();
+    }
 
     hcf();
+}
+
+struct ElfMmapImpl;
+
+impl Mmap for ElfMmapImpl {
+    unsafe fn mmap(
+        addr: Option<usize>,
+        len: usize,
+        prot: elf_loader::mmap::ProtFlags,
+        flags: elf_loader::mmap::MapFlags,
+        offset: usize,
+        fd: Option<i32>,
+        need_copy: &mut bool,
+    ) -> elf_loader::Result<core::ptr::NonNull<core::ffi::c_void>> {
+        todo!()
+    }
+
+    unsafe fn mmap_anonymous(
+        addr: usize,
+        len: usize,
+        prot: elf_loader::mmap::ProtFlags,
+        flags: elf_loader::mmap::MapFlags,
+    ) -> elf_loader::Result<core::ptr::NonNull<core::ffi::c_void>> {
+        todo!()
+    }
+
+    unsafe fn munmap(
+        addr: core::ptr::NonNull<core::ffi::c_void>,
+        len: usize,
+    ) -> elf_loader::Result<()> {
+        todo!()
+    }
+
+    unsafe fn mprotect(
+        addr: core::ptr::NonNull<core::ffi::c_void>,
+        len: usize,
+        prot: elf_loader::mmap::ProtFlags,
+    ) -> elf_loader::Result<()> {
+        todo!()
+    }
 }
 
 #[unsafe(no_mangle)]

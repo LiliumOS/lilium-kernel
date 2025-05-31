@@ -23,6 +23,10 @@ SECTIONS
     /* that is the beginning of the region. */
     . = 0xffffffff80000000;
 
+    .got : {
+        *(.got) *(.igot)
+    }
+
     .text : ALIGN(4096) {
         *(.text .text.*)
     } :text
@@ -30,6 +34,10 @@ SECTIONS
     .rodata : ALIGN(4096) {
         *(.rodata .rodata.*)
     } :rodata
+
+    .dynamic : {
+        *(.dynamic .dynamic.*)
+    } :data :dynamic
 
     .data : ALIGN(4096) {
         /* Place the sections that contain the Limine requests as part of the .data */
@@ -40,10 +48,6 @@ SECTIONS
 
         *(.data .data.*)
     } :data
-
-    .dynamic : {
-        *(.dynamic .dynamic.*)
-    } :data :dynamic
 
     /* NOTE: .bss needs to be the last thing mapped to :data, otherwise lots of */
     /* unnecessary zeros will be written to the binary. */
