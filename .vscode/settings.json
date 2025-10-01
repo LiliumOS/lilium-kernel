@@ -1,4 +1,8 @@
 {
     "rust-analyzer.cargo.target": "x86_64-pc-lilium-loader",
     "rust-analyzer.check.allTargets": false,
+    "rust-analyzer.linkedProjects": [
+        "loader/Cargo.toml",
+        "modules/Cargo.toml"
+    ]
 }

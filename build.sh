@@ -1,4 +1,5 @@
-cargo build --profile dev --workspace || exit 1
+echo "Building loader" && cargo build --target x86_64-pc-lilium-kernel --profile dev --manifest-path loader/Cargo.toml --target-dir target/ || exit 1
+echo "Building Modules" && cargo build --target x86_64-pc-lilium-kernel --profile dev --manifest-path modules/Cargo.toml --workspace --target-dir target/
 cp -v target/x86_64-pc-lilium-loader/debug/liblilium_loader.so lilium-loader.so
 
 mkdir -p ovmf

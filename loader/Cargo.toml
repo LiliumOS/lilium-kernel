@@ -1,7 +1,7 @@
 [package]
 name = "lilium-loader"
 version = "0.1.0"
-edition.workspace = true
+edition = "2024"
 
 [dependencies]
 acpi = "5.2.0"
@@ -12,7 +12,7 @@ ld-so-impl = { git = "https://github.com/LiliumOS/ld-so-impl.git", features = [
 embedded-graphics-core = "0.4.0"
 embedded-term = { git = "https://github.com/rdrpenguin04/embedded-term" }
 limine = "0.4.0"
-los-api.workspace = true
+los-api = { path = "../api" }
 pc-keyboard = "0.8.0"
 spin = "0.10.0"
 talc = "4.4.2"
@@ -21,3 +21,13 @@ x86_64 = "0.15.2"
 
 [lib]
 crate-type = ["cdylib"]
+
+[profile.dev]
+opt-level = 2
+debug = true
+debug-assertions = false
+overflow-checks = false
+
+[profile.release]
+opt-level = 3
+lto = true

@@ -1,4 +1,4 @@
-/target
+target/
 /ovmf
 /lilium-loader.so
 *.iso
