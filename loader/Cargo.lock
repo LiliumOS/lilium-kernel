@@ -152,7 +152,7 @@ dependencies = [
 [[package]]
 name = "ld-so-impl"
 version = "0.1.0"
-source = "git+https://github.com/LiliumOS/ld-so-impl.git#7bbee39608033f36ffe6655a25cfd64c1766650b"
+source = "git+https://github.com/LiliumOS/ld-so-impl.git#7602674b59927fea7cbf6df81c481872395f8367"
 dependencies = [
  "bitflags 2.9.1",
  "bytemuck",

@@ -5,7 +5,9 @@ pub struct Console;
 impl core::fmt::Write for Console {
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
         let data = s.as_bytes();
-        unsafe { print_bytes(data.as_ptr(), data.len()); }
+        unsafe {
+            print_bytes(data.as_ptr(), data.len());
+        }
         Ok(())
     }
 }
@@ -35,11 +37,11 @@ fn rust_panic(info: &core::panic::PanicInfo) -> ! {
 }
 
 pub fn hcf() -> ! {
-    unsafe { hcf_real(); }
+    hcf_real();
 }
 
 unsafe extern "C" {
-    fn hcf_real() -> !;
+    safe fn hcf_real() -> !;
 
-    fn print_bytes(data: *const u8, len: usize);
+    unsafe fn print_bytes(data: *const u8, len: usize);
 }

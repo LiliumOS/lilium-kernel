@@ -1,6 +1,7 @@
 #![feature(allocator_api)]
 #![feature(never_type)]
 #![feature(abi_x86_interrupt)]
+#![feature(sync_unsafe_cell, ptr_as_ref_unchecked)]
 #![no_std]
 #![no_main]
 
@@ -11,20 +12,22 @@ mod framebuffer;
 mod interrupt;
 mod keyboard;
 mod limine_requests;
+mod loader;
 mod memory;
 mod prelude;
 mod util;
 
 use alloc::string::String;
-use core::{arch::naked_asm, slice};
+use core::{arch::naked_asm, cell::SyncUnsafeCell, slice};
 use embedded_term::ConsoleOnGraphic;
 use framebuffer::Framebuffer;
+use ld_so_impl::{resolver::Resolver, safe_addr_of};
 use limine::memory_map::EntryType;
 use limine_requests::{BASE_REVISION, FRAMEBUFFER_REQUEST, MEMORY_MAP_REQUEST};
 use los_api::{hcf, println};
 use talc::*;
 
-use crate::limine_requests::MODULE_REQUEST;
+use crate::{limine_requests::MODULE_REQUEST, loader::RawPageLoader};
 
 const ARENA_SIZE: usize = 0x200000;
 static mut ARENA: [u8; ARENA_SIZE] = [0; ARENA_SIZE];
@@ -108,10 +111,32 @@ fn kmain_real() -> ! {
 
     apic::init();
 
-    todo!();
+    // unsafe {
+    //     RESOLVER
+    //         .get()
+    //         .as_mut_unchecked()
+    //         .set_loader_backend(&RawPageLoader);
+    // }
+
+    let dyn_ent = ld_so_impl::dynamic_section();
+
+    unsafe {
+        RESOLVER.get().as_ref_unchecked().resolve_object(
+            base_addr,
+            dyn_ent,
+            Some(c"lilium-loader.so"),
+            core::ptr::null_mut(),
+            !0,
+            None,
+        );
+    }
+
+    println!("Dynloader loaded");
 
     hcf();
 }
+
+static RESOLVER: SyncUnsafeCell<Resolver> = SyncUnsafeCell::new(Resolver::ZERO);
 
 #[unsafe(no_mangle)]
 extern "C" fn hcf_real() -> ! {
