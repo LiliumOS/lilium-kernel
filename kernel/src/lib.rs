@@ -62,6 +62,8 @@ unsafe extern "C" fn kmain() -> ! {
 fn kmain_real() -> ! {
     assert!(BASE_REVISION.is_supported());
 
+    let base_addr = ld_so_impl::load_addr();
+
     let Some(framebuffer_response) = FRAMEBUFFER_REQUEST.get_response() else {
         hcf();
     };
@@ -73,34 +75,36 @@ fn kmain_real() -> ! {
     CONSOLE.call_once(|| spin::Mutex::new(console));
     println!("Hello, world!");
 
+    println!("Base Address: {base_addr:p}");
+
     let Some(memory_map_response) = MEMORY_MAP_REQUEST.get_response() else {
         hcf();
     };
-    for entry in memory_map_response.entries() {
-        let entry_type = entry.entry_type;
-        let base = entry.base;
-        let length = entry.length;
-        let entry_type_str = match entry_type {
-            EntryType::USABLE => "Usable",
-            EntryType::RESERVED => "Reserved",
-            EntryType::ACPI_RECLAIMABLE => "ACPI (Reclaimable)",
-            EntryType::ACPI_NVS => "ACPI (NVS)",
-            EntryType::BAD_MEMORY => "Bad memory",
-            EntryType::BOOTLOADER_RECLAIMABLE => "Bootloader (Reclaimable)",
-            EntryType::EXECUTABLE_AND_MODULES => "Executable and Modules",
-            EntryType::FRAMEBUFFER => "Framebuffer",
-            _ => unreachable!(),
-        };
-        let color_code = if entry_type == EntryType::USABLE {
-            "\x1b[32m"
-        } else {
-            "\x1b[0m"
-        };
-        println!(
-            "{color_code}{length:#018X} @ [{base:#018X} - {:#018X}]: {entry_type_str}",
-            base + length
-        );
-    }
+    // for entry in memory_map_response.entries() {
+    //     let entry_type = entry.entry_type;
+    //     let base = entry.base;
+    //     let length = entry.length;
+    //     let entry_type_str = match entry_type {
+    //         EntryType::USABLE => "Usable",
+    //         EntryType::RESERVED => "Reserved",
+    //         EntryType::ACPI_RECLAIMABLE => "ACPI (Reclaimable)",
+    //         EntryType::ACPI_NVS => "ACPI (NVS)",
+    //         EntryType::BAD_MEMORY => "Bad memory",
+    //         EntryType::BOOTLOADER_RECLAIMABLE => "Bootloader (Reclaimable)",
+    //         EntryType::EXECUTABLE_AND_MODULES => "Executable and Modules",
+    //         EntryType::FRAMEBUFFER => "Framebuffer",
+    //         _ => unreachable!(),
+    //     };
+    //     let color_code = if entry_type == EntryType::USABLE {
+    //         "\x1b[32m"
+    //     } else {
+    //         "\x1b[0m"
+    //     };
+    //     println!(
+    //         "{color_code}{length:#018X} @ [{base:#018X} - {:#018X}]: {entry_type_str}",
+    //         base + length
+    //     );
+    // }
 
     apic::init();
 

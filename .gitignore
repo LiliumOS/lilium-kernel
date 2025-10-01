@@ -1,5 +1,5 @@
 /target
 /ovmf
-kernel.bin
+/lilium-loader.so
 *.iso
 /iso_root

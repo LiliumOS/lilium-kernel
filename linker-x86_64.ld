@@ -21,7 +21,8 @@ SECTIONS
     /* and because that is what the Limine spec mandates. */
     /* Any address in this region will do, but often 0xffffffff80000000 is chosen as */
     /* that is the beginning of the region. */
-    . = 0xffffffff80000000;
+    /* Not required with KALSR on */
+    /* . = 0xffffffff80000000; */
 
 
     .text : ALIGN(4096) {
