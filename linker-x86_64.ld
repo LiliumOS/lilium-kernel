@@ -23,12 +23,6 @@ SECTIONS
     /* that is the beginning of the region. */
     . = 0xffffffff80000000;
 
-    /* This is the changed bit. We need to make sure the GOT gets placed *before* */
-    /* anything else. We don't need it to be loaded at runtime right now though, so */
-    /* just naming it will be enough. */
-    .got : {
-        *(.got) *(.igot)
-    }
 
     .text : ALIGN(4096) {
         *(.text .text.*)
@@ -38,9 +32,16 @@ SECTIONS
         *(.rodata .rodata.*)
     } :rodata
 
-    .dynamic : {
+    .dynamic : ALIGN(4096){
         *(.dynamic .dynamic.*)
     } :data :dynamic
+
+    /* This is the changed bit. We need to make sure the GOT gets placed *before* */
+    /* anything else. We don't need it to be loaded at runtime right now though, so */
+    /* just naming it will be enough. */
+    .got : {
+        *(.got) *(.igot)
+    } :data
 
     .data : ALIGN(4096) {
         /* Place the sections that contain the Limine requests as part of the .data */

@@ -54,6 +54,29 @@ name = "bitflags"
 version = "2.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1b8e56985ec62d17e9c1001dc89c88ecd7dc08e47eba5ec7c29c7b5eeecde967"
+dependencies = [
+ "bytemuck",
+]
+
+[[package]]
+name = "bytemuck"
+version = "1.23.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3995eaeebcdf32f91f980d360f78732ddc061097ab4e39991ae7a6ace9194677"
+dependencies = [
+ "bytemuck_derive",
+]
+
+[[package]]
+name = "bytemuck_derive"
+version = "1.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4f154e572231cb6ba2bd1176980827e3d5dc04cc183a75dea38109fbdd672d29"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
 
 [[package]]
 name = "byteorder"
@@ -62,39 +85,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 
 [[package]]
-name = "cfg-if"
-version = "1.0.0"
+name = "cfg-match"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
-
-[[package]]
-name = "delegate"
-version = "0.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b9b6483c2bbed26f97861cf57651d4f2b731964a28cd2257f934a4b452480d21"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "elf"
-version = "0.7.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4445909572dbd556c457c849c4ca58623d84b27c8fff1e74b0b4227d8b90d17b"
-
-[[package]]
-name = "elf_loader"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b04e85f1b5a3b981baba89d7f33d5cb5113f83598a651d393c6bea4474b73c8c"
-dependencies = [
- "bitflags 2.9.1",
- "cfg-if",
- "delegate",
- "elf",
-]
+checksum = "8100e46ff92eb85bf6dc2930c73f2a4f7176393c84a9446b3d501e1b354e7b34"
 
 [[package]]
 name = "embedded-graphics"
@@ -132,6 +126,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "fake-enum"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "185b4cd26aff3789b8662aa73732b585d46b9756cd3c6b302be72f68302c5eba"
+
+[[package]]
 name = "float-cmp"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -154,6 +154,34 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 dependencies = [
  "spin 0.9.8",
+]
+
+[[package]]
+name = "ld-so-impl"
+version = "0.1.0"
+source = "git+https://github.com/LiliumOS/ld-so-impl.git#7bbee39608033f36ffe6655a25cfd64c1766650b"
+dependencies = [
+ "bitflags 2.9.1",
+ "bytemuck",
+ "cfg-match",
+ "fake-enum",
+]
+
+[[package]]
+name = "lilium-loader"
+version = "0.1.0"
+dependencies = [
+ "acpi",
+ "embedded-graphics-core",
+ "embedded-term",
+ "ld-so-impl",
+ "limine",
+ "los-api",
+ "pc-keyboard",
+ "spin 0.10.0",
+ "talc",
+ "x2apic",
+ "x86_64",
 ]
 
 [[package]]
@@ -204,23 +232,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
 dependencies = [
  "autocfg",
-]
-
-[[package]]
-name = "os-for-fun"
-version = "0.1.0"
-dependencies = [
- "acpi",
- "elf_loader",
- "embedded-graphics-core",
- "embedded-term",
- "limine",
- "los-api",
- "pc-keyboard",
- "spin 0.10.0",
- "talc",
- "x2apic",
- "x86_64",
 ]
 
 [[package]]

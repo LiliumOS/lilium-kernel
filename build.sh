@@ -1,5 +1,5 @@
 cargo build --profile dev --workspace || exit 1
-cp -v target/x86_64-pc-los-kernel/debug/os-for-fun kernel.bin
+cp -v target/x86_64-pc-lilium-loader/debug/liblilium_loader.so lilium-loader.so
 
 mkdir -p ovmf
 if [ ! -f ovmf/ovmf-code-x86_64.fd ]; then
@@ -20,8 +20,8 @@ fi
 rm -rf iso_root
 
 mkdir -p iso_root/boot/modules
-cp -v kernel.bin iso_root/boot/kernel.bin
-cp -v target/x86_64-pc-los-kernel/debug/libhello_world.so iso_root/boot/modules/hello_world.so
+cp -v lilium-loader.so iso_root/boot/lilium-loader.so
+cp -v target/x86_64-pc-lilium-loader/debug/libhello_world.so iso_root/boot/modules/hello_world.so
 
 mkdir -p iso_root/boot/limine
 cp -v limine.conf iso_root/boot/limine

@@ -1,11 +1,14 @@
 [package]
-name = "os-for-fun"
+name = "lilium-loader"
 version = "0.1.0"
 edition.workspace = true
 
 [dependencies]
 acpi = "5.2.0"
-elf_loader = { version = "0.11.0", default-features = false }
+ld-so-impl = { git = "https://github.com/LiliumOS/ld-so-impl.git", features = [
+    "deny-wx",
+    "tls",
+] }
 embedded-graphics-core = "0.4.0"
 embedded-term = { git = "https://github.com/rdrpenguin04/embedded-term" }
 limine = "0.4.0"
@@ -15,3 +18,6 @@ spin = "0.10.0"
 talc = "4.4.2"
 x2apic = "0.5.0"
 x86_64 = "0.15.2"
+
+[lib]
+crate-type = ["cdylib"]

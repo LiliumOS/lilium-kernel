@@ -1,13 +1,10 @@
 [unstable]
-build-std = [
-    "alloc",
-    "core",
-    "compiler_builtins"
-]
+build-std = ["alloc", "core", "compiler_builtins"]
 build-std-features = ["compiler-builtins-mem"]
 
 [build]
-target = "x86_64-pc-los-kernel"
+target = "x86_64-pc-lilium-loader"
+rustflags = ["-Zdefault-visibility=protected"]
 
 [env]
 RUST_TARGET_PATH = { value = "targets", relative = true }
