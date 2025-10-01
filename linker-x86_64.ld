@@ -23,6 +23,9 @@ SECTIONS
     /* that is the beginning of the region. */
     . = 0xffffffff80000000;
 
+    /* This is the changed bit. We need to make sure the GOT gets placed *before* */
+    /* anything else. We don't need it to be loaded at runtime right now though, so */
+    /* just naming it will be enough. */
     .got : {
         *(.got) *(.igot)
     }
