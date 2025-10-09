@@ -36,7 +36,15 @@ use limine::memory_map::EntryType;
 use limine_requests::{BASE_REVISION, FRAMEBUFFER_REQUEST, MEMORY_MAP_REQUEST};
 use los_api::{hcf, println};
 use talc::*;
-use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
+use x86_64::{
+    VirtAddr,
+    registers::segmentation::{CS, SS, Segment},
+    structures::{
+        gdt::{Descriptor, DescriptorFlags, Entry, GlobalDescriptorTable, SegmentSelector},
+        idt::{InterruptDescriptorTable, InterruptStackFrame},
+        tss::TaskStateSegment,
+    },
+};
 
 use crate::{limine_requests::MODULE_REQUEST, loader::RawPageLoader};
 
@@ -46,6 +54,8 @@ static mut ARENA: [u8; ARENA_SIZE] = [0; ARENA_SIZE];
 const STACK_SIZE: usize = 0x10000;
 static mut STACK: [u8; STACK_SIZE] = [0; STACK_SIZE];
 
+const INTR_STACK_SIZE: usize = 0x1000;
+static mut DF_STACK: [u8; INTR_STACK_SIZE] = [0; INTR_STACK_SIZE];
 #[global_allocator]
 static ALLOCATOR: Talck<spin::Mutex<()>, ClaimOnOom> = Talc::new(unsafe {
     // if we're in a hosted environment, the Rust runtime may allocate before
@@ -94,7 +104,7 @@ extern "x86-interrupt" fn halt_on_exception_error<const N: &'static str, T: Debu
     hcf()
 }
 
-extern "x86-interrupt" fn halt_on_exception_df<const N: &'static str, T: Debug>(
+extern "x86-interrupt" fn halt_on_abort<const N: &'static str, T: Debug>(
     frame: InterruptStackFrame,
     retc: T,
 ) -> ! {
@@ -108,6 +118,39 @@ extern "x86-interrupt" fn halt_on_exception_df<const N: &'static str, T: Debug>(
 fn kmain_real() -> ! {
     assert!(BASE_REVISION.is_supported());
 
+    let mut tss = TaskStateSegment::new();
+    tss.interrupt_stack_table[0] = VirtAddr::from_ptr(unsafe { (&raw mut DF_STACK).add(1) });
+
+    let mut gdt = GlobalDescriptorTable::<16>::empty();
+
+    gdt.append(Descriptor::UserSegment(
+        (DescriptorFlags::CONFORMING
+            | DescriptorFlags::EXECUTABLE
+            | DescriptorFlags::WRITABLE
+            | DescriptorFlags::LIMIT_0_15)
+            .bits(),
+    ));
+    gdt.append(Descriptor::UserSegment(
+        (DescriptorFlags::CONFORMING | DescriptorFlags::WRITABLE | DescriptorFlags::LIMIT_0_15)
+            .bits(),
+    ));
+    gdt.append(Descriptor::UserSegment(
+        DescriptorFlags::KERNEL_CODE32.bits(),
+    ));
+    gdt.append(Descriptor::UserSegment(
+        (DescriptorFlags::KERNEL_CODE32 & !DescriptorFlags::EXECUTABLE).bits(),
+    ));
+    gdt.append(Descriptor::kernel_code_segment());
+    gdt.append(Descriptor::kernel_data_segment());
+    gdt.append(unsafe { Descriptor::tss_segment_unchecked(&tss) });
+
+    unsafe {
+        gdt.load_unsafe();
+        SS::set_reg(SegmentSelector::new(6, x86_64::PrivilegeLevel::Ring0));
+        CS::set_reg(SegmentSelector::new(5, x86_64::PrivilegeLevel::Ring0));
+        core::arch::asm!("ltr {:x}", in(reg) SegmentSelector::new(7, x86_64::PrivilegeLevel::Ring0).0);
+    }
+
     let mut idt = InterruptDescriptorTable::new();
     idt.invalid_opcode.set_handler_fn(halt_on_exception::<"UD">);
     idt.page_fault
@@ -115,9 +158,16 @@ fn kmain_real() -> ! {
 
     idt.general_protection_fault
         .set_handler_fn(halt_on_exception_error::<"GP", _>);
+    idt.stack_segment_fault
+        .set_handler_fn(halt_on_exception_error::<"SS", _>);
 
-    idt.double_fault
-        .set_handler_fn(halt_on_exception_df::<"DF", _>);
+    idt.breakpoint.set_handler_fn(halt_on_exception::<"BP">);
+    idt.debug.set_handler_fn(halt_on_exception::<"DB">);
+    unsafe {
+        idt.double_fault
+            .set_handler_fn(halt_on_abort::<"DF", _>)
+            .set_stack_index(0);
+    }
 
     unsafe {
         idt.load_unsafe();
