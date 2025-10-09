@@ -3,6 +3,7 @@
     "rust-analyzer.check.allTargets": false,
     "rust-analyzer.linkedProjects": [
         "loader/Cargo.toml",
-        "modules/Cargo.toml"
+        "modules/Cargo.toml",
+        "api/Cargo.toml",
     ]
 }

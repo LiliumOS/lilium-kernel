@@ -1,7 +1,13 @@
 #![feature(allocator_api)]
 #![feature(never_type)]
 #![feature(abi_x86_interrupt)]
-#![feature(sync_unsafe_cell, ptr_as_ref_unchecked)]
+#![feature(
+    sync_unsafe_cell,
+    ptr_as_ref_unchecked,
+    cstr_display,
+    adt_const_params,
+    unsized_const_params
+)]
 #![no_std]
 #![no_main]
 
@@ -18,14 +24,19 @@ mod prelude;
 mod util;
 
 use alloc::string::String;
-use core::{arch::naked_asm, cell::SyncUnsafeCell, slice};
+use core::{arch::naked_asm, cell::SyncUnsafeCell, ffi::CStr, fmt::Debug, slice};
 use embedded_term::ConsoleOnGraphic;
 use framebuffer::Framebuffer;
-use ld_so_impl::{resolver::Resolver, safe_addr_of};
+use ld_so_impl::{
+    loader::Error,
+    resolver::{ResolveError, Resolver},
+    safe_addr_of,
+};
 use limine::memory_map::EntryType;
 use limine_requests::{BASE_REVISION, FRAMEBUFFER_REQUEST, MEMORY_MAP_REQUEST};
 use los_api::{hcf, println};
 use talc::*;
+use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
 
 use crate::{limine_requests::MODULE_REQUEST, loader::RawPageLoader};
 
@@ -61,9 +72,56 @@ unsafe extern "C" fn kmain() -> ! {
     );
 }
 
+fn resolve_error(msg: &CStr, e: Error) -> ! {
+    println!("{e:?}: {}", msg.display());
+    hcf()
+}
+
+extern "x86-interrupt" fn halt_on_exception<const N: &'static str>(frame: InterruptStackFrame) {
+    let rip = frame.instruction_pointer;
+    let cs = frame.code_segment;
+    println!("Caught #{N}: Return Address ({cs:?}:{rip:p})");
+    hcf()
+}
+
+extern "x86-interrupt" fn halt_on_exception_error<const N: &'static str, T: Debug>(
+    frame: InterruptStackFrame,
+    retc: T,
+) {
+    let rip = frame.instruction_pointer;
+    let cs = frame.code_segment;
+    println!("Caught #{N}({retc:?}): Return Address ({cs:?}:{rip:p})");
+    hcf()
+}
+
+extern "x86-interrupt" fn halt_on_exception_df<const N: &'static str, T: Debug>(
+    frame: InterruptStackFrame,
+    retc: T,
+) -> ! {
+    let rip = frame.instruction_pointer;
+    let cs = frame.code_segment;
+    println!("Caught #{N}({retc:?}): Return Address ({cs:?}:{rip:p})");
+    hcf()
+}
+
 #[unsafe(no_mangle)]
 fn kmain_real() -> ! {
     assert!(BASE_REVISION.is_supported());
+
+    let mut idt = InterruptDescriptorTable::new();
+    idt.invalid_opcode.set_handler_fn(halt_on_exception::<"UD">);
+    idt.page_fault
+        .set_handler_fn(halt_on_exception_error::<"PF", _>);
+
+    idt.general_protection_fault
+        .set_handler_fn(halt_on_exception_error::<"GP", _>);
+
+    idt.double_fault
+        .set_handler_fn(halt_on_exception_df::<"DF", _>);
+
+    unsafe {
+        idt.load_unsafe();
+    }
 
     let base_addr = ld_so_impl::load_addr();
 
@@ -111,14 +169,21 @@ fn kmain_real() -> ! {
 
     apic::init();
 
-    // unsafe {
-    //     RESOLVER
-    //         .get()
-    //         .as_mut_unchecked()
-    //         .set_loader_backend(&RawPageLoader);
-    // }
+    unsafe {
+        RESOLVER
+            .get()
+            .as_mut_unchecked()
+            .set_loader_backend(&RawPageLoader);
+    }
 
     let dyn_ent = ld_so_impl::dynamic_section();
+
+    unsafe {
+        RESOLVER
+            .get()
+            .as_mut_unchecked()
+            .set_resolve_error_callback(resolve_error);
+    }
 
     unsafe {
         RESOLVER.get().as_ref_unchecked().resolve_object(

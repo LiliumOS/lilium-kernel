@@ -5,11 +5,7 @@ edition = "2024"
 
 [dependencies]
 acpi = "5.2.0"
-ld-so-impl = { git = "https://github.com/LiliumOS/ld-so-impl.git", features = [
-    "deny-wx",
-    "tls",
-    "entry",
-] }
+ld-so-impl = { path = "ld-so-impl", features = ["deny-wx", "tls", "entry"] }
 embedded-graphics-core = "0.4.0"
 embedded-term = { git = "https://github.com/rdrpenguin04/embedded-term" }
 limine = "0.4.0"

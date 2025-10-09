@@ -35,20 +35,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "185b4cd26aff3789b8662aa73732b585d46b9756cd3c6b302be72f68302c5eba"
 
 [[package]]
-name = "hello_world"
-version = "0.1.0"
-dependencies = [
- "los-api",
-]
-
-[[package]]
-name = "lilium-kernel"
-version = "0.1.0"
-dependencies = [
- "los-api",
-]
-
-[[package]]
 name = "lilium-sys"
 version = "0.1.0"
 source = "git+https://github.com/LiliumOS/lilium-sys#0f940891fe05aecdfc98a96f124e4b5c399bb5e4"

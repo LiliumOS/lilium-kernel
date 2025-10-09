@@ -5,4 +5,4 @@ qemu-system-x86_64 \
     -s -S \
     -drive if=pflash,unit=0,format=raw,file=ovmf/ovmf-code-x86_64.fd,readonly=on \
     -drive if=pflash,unit=1,format=raw,file=ovmf/ovmf-vars-x86_64.fd \
-    -cdrom lilium.iso
+    -cdrom lilium.iso &

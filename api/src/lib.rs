@@ -45,3 +45,5 @@ unsafe extern "C" {
 
     unsafe fn print_bytes(data: *const u8, len: usize);
 }
+
+pub mod auxv;
