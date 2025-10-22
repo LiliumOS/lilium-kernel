@@ -7,7 +7,6 @@
     "panic-strategy": "abort",
     "target-pointer-width": 64,
     "dynamic-linking": true,
-    "features": "-mmx,-sse,+soft-float",
-    "relocation-model": "pic",
-    "rustc-abi": "x86-softfloat"
+    "features": "-mmx,+sse,+sse2,-avx,-avx2",
+    "relocation-model": "pic"
 }

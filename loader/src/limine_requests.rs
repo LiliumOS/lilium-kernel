@@ -1,7 +1,9 @@
 use limine::{
+    BaseRevision,
     request::{
-        FramebufferRequest, HhdmRequest, MemoryMapRequest, ModuleRequest, RequestsEndMarker, RequestsStartMarker, RsdpRequest
-    }, BaseRevision
+        ExecutableFileRequest, FramebufferRequest, HhdmRequest, MemoryMapRequest, ModuleRequest,
+        RequestsEndMarker, RequestsStartMarker, RsdpRequest,
+    },
 };
 
 #[used]
@@ -27,6 +29,11 @@ pub static MODULE_REQUEST: ModuleRequest = ModuleRequest::new();
 #[used]
 #[unsafe(link_section = ".requests")]
 pub static RSDP_REQUEST: RsdpRequest = RsdpRequest::new();
+
+// Get the Command Line as well as the boot partition for the auxv
+#[used]
+#[unsafe(link_section = ".requests")]
+pub static EXECUTABLE_FILE: ExecutableFileRequest = ExecutableFileRequest::new();
 
 #[used]
 #[unsafe(link_section = ".requests_start_marker")]

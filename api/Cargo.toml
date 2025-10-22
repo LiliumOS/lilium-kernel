@@ -11,3 +11,7 @@ lilium-sys = { git = "https://github.com/LiliumOS/lilium-sys", version = "0.1.0"
     "bytemuck",
     "error-num",
 ] }
+
+
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+x86_64 = "0.15.2"

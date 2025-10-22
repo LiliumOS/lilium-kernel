@@ -1,4 +1,6 @@
 #![no_std]
+#![feature(never_type, mem_conjure_zst)]
+#![cfg_attr(target_arch = "x86_64", feature(abi_x86_interrupt))]
 
 pub struct Console;
 
@@ -36,7 +38,8 @@ fn rust_panic(info: &core::panic::PanicInfo) -> ! {
     hcf();
 }
 
-pub fn hcf() -> ! {
+#[inline]
+pub extern "C" fn hcf() -> ! {
     hcf_real();
 }
 
@@ -47,3 +50,5 @@ unsafe extern "C" {
 }
 
 pub mod auxv;
+
+pub mod arch;

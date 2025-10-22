@@ -223,6 +223,7 @@ version = "0.1.0"
 dependencies = [
  "fake-enum",
  "lilium-sys",
+ "x86_64",
 ]
 
 [[package]]

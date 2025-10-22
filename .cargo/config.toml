@@ -4,7 +4,7 @@ build-std-features = ["compiler-builtins-mem"]
 
 [build]
 # target = "x86_64-pc-lilium-loader"
-rustflags = ["-Zdefault-visibility=protected"]
+rustflags = ["-Zdefault-visibility=protected", "-Crelro-level=off"]
 
 [env]
 RUST_TARGET_PATH = { value = "targets", relative = true }
