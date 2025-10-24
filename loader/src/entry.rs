@@ -7,7 +7,8 @@ use los_api::{hcf, println};
 use crate::{
     CONSOLE, RESOLVER,
     framebuffer::Framebuffer,
-    limine_requests::{FRAMEBUFFER_REQUEST, MEMORY_MAP_REQUEST},
+    limine_requests::{FRAMEBUFFER_REQUEST, HHDM_REQUEST, MEMORY_MAP_REQUEST},
+    loader::RawPageLoader,
 };
 
 #[cfg(target_arch = "x86_64")]
@@ -27,6 +28,10 @@ const INTR_STACK_SIZE: usize = 0x1000;
 pub fn portable_entry(postinit_cb: impl FnOnce()) -> ! {
     let base_addr = ld_so_impl::load_addr();
 
+    let Some(hhdm_response) = HHDM_REQUEST.get_response() else {
+        hcf()
+    };
+
     let Some(framebuffer_response) = FRAMEBUFFER_REQUEST.get_response() else {
         hcf();
     };
@@ -38,42 +43,46 @@ pub fn portable_entry(postinit_cb: impl FnOnce()) -> ! {
     CONSOLE.call_once(|| spin::Mutex::new(console));
     println!("Hello, world!");
 
-    println!("Base Address: {base_addr:p}");
-
     let Some(memory_map_response) = MEMORY_MAP_REQUEST.get_response() else {
         hcf();
     };
-    // for entry in memory_map_response.entries() {
-    //     let entry_type = entry.entry_type;
-    //     let base = entry.base;
-    //     let length = entry.length;
-    //     let entry_type_str = match entry_type {
-    //         EntryType::USABLE => "Usable",
-    //         EntryType::RESERVED => "Reserved",
-    //         EntryType::ACPI_RECLAIMABLE => "ACPI (Reclaimable)",
-    //         EntryType::ACPI_NVS => "ACPI (NVS)",
-    //         EntryType::BAD_MEMORY => "Bad memory",
-    //         EntryType::BOOTLOADER_RECLAIMABLE => "Bootloader (Reclaimable)",
-    //         EntryType::EXECUTABLE_AND_MODULES => "Executable and Modules",
-    //         EntryType::FRAMEBUFFER => "Framebuffer",
-    //         _ => unreachable!(),
-    //     };
-    //     let color_code = if entry_type == EntryType::USABLE {
-    //         "\x1b[32m"
-    //     } else {
-    //         "\x1b[0m"
-    //     };
-    //     println!(
-    //         "{color_code}{length:#018X} @ [{base:#018X} - {:#018X}]: {entry_type_str}",
-    //         base + length
-    //     );
-    // }
+    for entry in memory_map_response.entries() {
+        let entry_type = entry.entry_type;
+        let base = entry.base;
+        let length = entry.length;
+        let entry_type_str = match entry_type {
+            EntryType::USABLE => "Usable",
+            EntryType::RESERVED => "Reserved",
+            EntryType::ACPI_RECLAIMABLE => "ACPI (Reclaimable)",
+            EntryType::ACPI_NVS => "ACPI (NVS)",
+            EntryType::BAD_MEMORY => "Bad memory",
+            EntryType::BOOTLOADER_RECLAIMABLE => "Bootloader (Reclaimable)",
+            EntryType::EXECUTABLE_AND_MODULES => "Executable and Modules",
+            EntryType::FRAMEBUFFER => "Framebuffer",
+            _ => unreachable!(),
+        };
+        let color_code = if entry_type == EntryType::USABLE {
+            "\x1b[32m"
+        } else {
+            "\x1b[0m"
+        };
+        println!(
+            "{color_code}{length:#018X} @ [{base:#018X} - {:#018X}]: {entry_type_str}",
+            base + length
+        );
+    }
+
+    println!("Base Address: {base_addr:p}");
 
     postinit_cb();
 
     let dyn_ent = ld_so_impl::dynamic_section();
 
+    println!("Calling Dynamic Loader");
+
     unsafe {
+        (*RESOLVER.get()).force_resolve_now();
+        (*RESOLVER.get()).set_loader_backend(&RawPageLoader);
         (*RESOLVER.get()).resolve_object(
             base_addr,
             dyn_ent,
@@ -86,5 +95,5 @@ pub fn portable_entry(postinit_cb: impl FnOnce()) -> ! {
 
     println!("Dynloader loaded");
 
-    hcf();
+    hcf()
 }

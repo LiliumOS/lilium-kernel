@@ -24,5 +24,6 @@
     },
     "static-position-independent-executables": false,
     "dynamic-linking": true,
-    "target-pointer-width": 64
+    "target-pointer-width": 64,
+    "os": "lilium"
 }

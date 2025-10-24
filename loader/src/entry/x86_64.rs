@@ -1,4 +1,4 @@
-use los_api::{hcf, println};
+use los_api::{hcf, helpers::Align16, println};
 use x86_64::{
     VirtAddr, instructions,
     registers::{
@@ -13,7 +13,7 @@ use x86_64::{
 };
 
 use crate::{
-    apic,
+    apic::{self, init},
     entry::{INTR_STACK_SIZE, PageAlign, STACK, STACK_SIZE},
     interrupt::IDT,
     limine_requests::BASE_REVISION,
@@ -132,4 +132,83 @@ extern "C" fn hcf_real() -> ! {
             core::arch::asm!("hlt");
         }
     }
+}
+
+pub fn fill_init_buffer<F: FnOnce(&[u8])>(f: F) {
+    let mut init_buf = [0u8; 16];
+    let range = init_buf.as_mut_ptr_range();
+    if lc_crypto::is_x86_feature_detected!("rdseed") {
+        unsafe {
+            core::arch::asm!(
+                "2:",
+                "lea rdi, [{in}+8]",
+                "rdseed rax",
+                "cmovc qword ptr [{in}], rax",
+                "cmovc {in}, rdi",
+                "cmp {in}, {end}",
+                "jne 2b",
+                in = inout(reg) range.start => _,
+                end = in(reg) range.end,
+                out("rax") _,
+                out("rdi") _,
+            )
+        }
+    } else if lc_crypto::is_x86_feature_detected!("rdrand") {
+        unsafe {
+            core::arch::asm!(
+                "2:",
+                "lea rdi, [{in}+8]",
+                "rdrand rax",
+                "cmovc qword ptr [{in}], rax",
+                "cmovc {in}, rdi",
+                "cmp {in}, {end}",
+                "jne 2b",
+                in = inout(reg) range.start => _,
+                end = in(reg) range.end,
+                out("rax") _,
+                out("rdi") _,
+                options(nostack),
+            )
+        }
+    } else {
+        let mut real_buf = [0u16; 8];
+        real_buf[0] = ((fill_init_buffer::<F> as usize) >> 10) as u16;
+
+        unsafe {
+            core::arch::asm!("mfence", "rdtsc", "shl eax, 3", out("ax") real_buf[1], out("rdx") _, options(nomem, nostack));
+        }
+
+        for x in 2..8 {
+            let mut membuf = Align16([0u8; 512]);
+            let mut scratch = 1u64;
+            unsafe {
+                core::arch::asm!(
+                    "lfence",
+                    "rdpmc",
+                    "finit",
+                    "fild [{scratch}]",
+                    "fldpi",
+                    "fadd",
+                    "fsin",
+                    "fld [{scratch}]",
+                    "fdiv st1",
+                    "fxsave [{membuf}]",
+                    "mfence",
+                    "mov esi, eax",
+                    "rdpmc",
+                    "fxrstor [{membuf}]",
+                    "sub eax, esi",
+                    out("ax") real_buf[x],
+                    out("rsi") _,
+                    in("rcx") 0,
+                    membuf = in(reg) &raw mut membuf,
+                    scratch = in(reg) &raw mut scratch,
+                )
+            }
+        }
+
+        init_buf = bytemuck::must_cast(real_buf);
+    }
+
+    f(&init_buf);
 }

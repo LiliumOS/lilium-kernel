@@ -20,7 +20,15 @@ version = "1.24.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1fbdf580320f38b612e485521afda1ee26d10cc9884efaaa750d383e13e3c5f4"
 dependencies = [
- "bytemuck_derive",
+ "bytemuck_derive 1.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "bytemuck"
+version = "1.24.0"
+source = "git+https://github.com/Lokathor/bytemuck#da748163ea203f80098b6bdc754c54ebc535364c"
+dependencies = [
+ "bytemuck_derive 1.10.2 (git+https://github.com/Lokathor/bytemuck)",
 ]
 
 [[package]]
@@ -35,10 +43,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "bytemuck_derive"
+version = "1.10.2"
+source = "git+https://github.com/Lokathor/bytemuck#da748163ea203f80098b6bdc754c54ebc535364c"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.106",
+]
+
+[[package]]
 name = "cfg-if"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2fd1289c04a9ea8cb22300a459a72a385d7c73d3259e2ed7dcb2af674838cfa9"
+
+[[package]]
+name = "cfg-match"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8100e46ff92eb85bf6dc2930c73f2a4f7176393c84a9446b3d501e1b354e7b34"
+
+[[package]]
+name = "concat-idents"
+version = "1.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f76990911f2267d837d9d0ad060aa63aaad170af40904b29461734c339030d4d"
+dependencies = [
+ "quote",
+ "syn 2.0.106",
+]
 
 [[package]]
 name = "fake-enum"
@@ -54,6 +88,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "lc-crypto"
+version = "0.1.0"
+source = "git+https://github.com/LightningCreations/lc-crypto#9f9090c256efa26715c1f23be7284362db5b8408"
+dependencies = [
+ "bytemuck 1.24.0 (git+https://github.com/Lokathor/bytemuck)",
+ "cfg-match",
+ "concat-idents",
+ "lilium-sys",
+ "linux-errno",
+ "spin",
+]
+
+[[package]]
 name = "lilium-kernel"
 version = "0.1.0"
 dependencies = [
@@ -65,9 +112,21 @@ name = "lilium-sys"
 version = "0.1.0"
 source = "git+https://github.com/LiliumOS/lilium-sys#0f940891fe05aecdfc98a96f124e4b5c399bb5e4"
 dependencies = [
- "bytemuck",
+ "bitflags",
+ "bytemuck 1.24.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cfg-if",
+ "paste",
+ "sptr",
  "with_builtin_macros",
+]
+
+[[package]]
+name = "linux-errno"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e3fb7f5d1d983421e02a44690025b1133e83f0e9d2ee60953217498a2bfdd34e"
+dependencies = [
+ "posix-errno",
 ]
 
 [[package]]
@@ -75,9 +134,23 @@ name = "los-api"
 version = "0.1.0"
 dependencies = [
  "fake-enum",
+ "lc-crypto",
  "lilium-sys",
+ "rand_core",
  "x86_64",
 ]
+
+[[package]]
+name = "paste"
+version = "1.0.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
+
+[[package]]
+name = "posix-errno"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e01299f73b0da867ebfaafe4bd75455d5f9b85534efe58ca10966e084c7f90ec"
 
 [[package]]
 name = "proc-macro2"
@@ -98,10 +171,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "rand_core"
+version = "0.9.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "99d9a13982dcf210057a8a78572b2217b667c3beacbf3a0d8b454f6f82837d38"
+
+[[package]]
 name = "rustversion"
 version = "1.0.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b39cdef0fa800fc44525c84ccb54a029961a8215f9619753635a9c0d2538d46d"
+
+[[package]]
+name = "spin"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d5fe4ccb98d9c292d56fec89a5e07da7fc4cf0dc11e156b41793132775d3e591"
+
+[[package]]
+name = "sptr"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3b9b39299b249ad65f3b7e96443bad61c02ca5cd3589f46cb6d610a0fd6c0d6a"
 
 [[package]]
 name = "syn"

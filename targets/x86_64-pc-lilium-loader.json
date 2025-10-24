@@ -8,5 +8,6 @@
     "target-pointer-width": 64,
     "dynamic-linking": true,
     "features": "-mmx,+sse,+sse2,-avx,-avx2",
-    "relocation-model": "pic"
+    "relocation-model": "pic",
+    "os": "lilium"
 }

@@ -1,5 +1,15 @@
 pub use x86_64::structures::idt::{InterruptStackFrame, PageFaultErrorCode};
 
+#[cfg(target_feature = "sse")]
+#[repr(align(16))]
+pub struct InterruptContext {}
+
+#[cfg(not(target_feature = "sse"))]
+pub struct InterruptContext<'a> {
+    pub frame: &'a mut InterruptStackFrame,
+    pub gprs: [usize; 15],
+}
+
 use crate::hcf;
 
 pub unsafe trait InterruptResult {
@@ -18,7 +28,7 @@ unsafe impl InterruptErrorCode for usize {}
 unsafe impl InterruptErrorCode for PageFaultErrorCode {}
 
 pub const fn exception_handler<
-    F: FnOnce(&mut InterruptStackFrame, T) -> R,
+    F: Fn(&mut InterruptStackFrame, T) -> R,
     T: InterruptErrorCode,
     R: InterruptResult,
 >(
@@ -112,6 +122,40 @@ pub const fn exception_handler<
         }
     }
 
+    #[cfg(not(target_feature = "sse"))]
+    #[unsafe(naked)]
+    extern "x86-interrupt" fn hdl_impl<F: Fn(&mut InterruptStackFrame) -> R, R: InterruptResult>(
+        sframe: InterruptStackFrame,
+    ) {
+        core::arch::naked_asm!(
+            "push rbp",
+            "mov rbp, rsp",
+            "and rsp, ~15",
+            "push rdi",
+            "push rsi",
+            "push rdx",
+            "push rcx",
+            "push rax",
+            "push r8",
+            "push r9",
+            "push r10",
+            "push r11",
+            "lea rdi, [rbp+8]",
+            "call {bounce}",
+            "pop r11",
+            "pop r10",
+            "pop r9",
+            "pop r8",
+            "pop rax",
+            "pop rcx",
+            "pop rdx",
+            "pop rsi",
+            "pop rdi",
+            "leave",
+            "iretq",
+        )
+    }
+
     if const { R::IS_DIVERGING } {
         unsafe {
             core::mem::transmute(
@@ -165,12 +209,13 @@ pub const fn interrupt_handler<F: Fn(&mut InterruptStackFrame) -> R, R: Interrup
     }
 
     #[unsafe(naked)]
+    #[cfg(target_feature = "sse")]
     extern "x86-interrupt" fn hdl_impl<F: Fn(&mut InterruptStackFrame) -> R, R: InterruptResult>(
         sframe: InterruptStackFrame,
     ) {
         core::arch::naked_asm! {
             "push rbp",
-            "lea rbp, [rsp]",
+            "mov rbp, rsp",
             "and rsp, ~15",
             "push rdi",
             "push rsi",
@@ -198,6 +243,40 @@ pub const fn interrupt_handler<F: Fn(&mut InterruptStackFrame) -> R, R: Interrup
             "iretq",
             bounce = sym call_hdl::<F, R>,
         }
+    }
+
+    #[cfg(not(target_feature = "sse"))]
+    #[unsafe(naked)]
+    extern "x86-interrupt" fn hdl_impl<F: Fn(&mut InterruptStackFrame) -> R, R: InterruptResult>(
+        sframe: InterruptStackFrame,
+    ) {
+        core::arch::naked_asm!(
+            "push rbp",
+            "mov rbp, rsp",
+            "and rsp, ~15",
+            "push rdi",
+            "push rsi",
+            "push rdx",
+            "push rcx",
+            "push rax",
+            "push r8",
+            "push r9",
+            "push r10",
+            "push r11",
+            "lea rdi, [rbp+8]",
+            "call {bounce}",
+            "pop r11",
+            "pop r10",
+            "pop r9",
+            "pop r8",
+            "pop rax",
+            "pop rcx",
+            "pop rdx",
+            "pop rsi",
+            "pop rdi",
+            "leave",
+            "iretq",
+        )
     }
 
     if const { R::IS_DIVERGING } {

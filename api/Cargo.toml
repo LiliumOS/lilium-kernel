@@ -5,12 +5,13 @@ edition = "2024"
 
 [dependencies]
 fake-enum = "0.1.4"
-# lc-crypto = { git = "https://github.com/LightningCreations/lc-crypto", version = "0.1.0" }
+lc-crypto = { git = "https://github.com/LightningCreations/lc-crypto", version = "0.1.0" }
 lilium-sys = { git = "https://github.com/LiliumOS/lilium-sys", version = "0.1.0", default-features = false, features = [
     "raw",
     "bytemuck",
     "error-num",
 ] }
+rand_core = "0.9.3"
 
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]

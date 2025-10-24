@@ -52,3 +52,7 @@ unsafe extern "C" {
 pub mod auxv;
 
 pub mod arch;
+
+pub mod rand;
+
+pub mod helpers;
