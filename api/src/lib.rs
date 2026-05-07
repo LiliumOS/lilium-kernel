@@ -2,6 +2,10 @@
 #![feature(never_type, mem_conjure_zst)]
 #![cfg_attr(target_arch = "x86_64", feature(abi_x86_interrupt))]
 
+use core::ffi::c_void;
+
+use crate::alloc::PagePool;
+
 pub struct Console;
 
 impl core::fmt::Write for Console {
@@ -47,6 +51,8 @@ unsafe extern "C" {
     safe fn hcf_real() -> !;
 
     unsafe fn print_bytes(data: *const u8, len: usize);
+
+    unsafe fn raw_kalloc(npages: usize, vaddr_hint: *mut c_void, pool: PagePool) -> *mut c_void;
 }
 
 pub mod auxv;
@@ -56,3 +62,5 @@ pub mod arch;
 pub mod rand;
 
 pub mod helpers;
+
+pub mod alloc;

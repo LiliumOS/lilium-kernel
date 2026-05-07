@@ -1,5 +1,5 @@
-echo "Building loader" && cargo build --target x86_64-pc-lilium-loader --profile dev --manifest-path loader/Cargo.toml --target-dir target/ || exit 1
-echo "Building Modules" && cargo build --target x86_64-pc-lilium-kernel --profile dev --manifest-path modules/Cargo.toml --workspace --target-dir target/
+echo "Building loader" && RUSTFLAGS="$RUSTFLAGS -Zunstable-options"  cargo build --target x86_64-pc-lilium-loader --profile dev --manifest-path loader/Cargo.toml --target-dir target/ -Zjson-target-spec || exit 1
+echo "Building Modules" && RUSTFLAGS="$RUSTFLAGS -Zunstable-options" cargo build --target x86_64-pc-lilium-kernel --profile dev --manifest-path modules/Cargo.toml --workspace --target-dir target/ -Zjson-target-spec
 cp -v target/x86_64-pc-lilium-loader/debug/liblilium_loader.so lilium-loader.so
 
 mkdir -p ovmf

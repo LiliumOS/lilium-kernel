@@ -184,7 +184,7 @@ pub fn fill_init_buffer<F: FnOnce(&[u8])>(f: F) {
             unsafe {
                 core::arch::asm!(
                     "lfence",
-                    "rdpmc",
+                    "rdtsc",
                     "finit",
                     "fild [{scratch}]",
                     "fldpi",
@@ -195,7 +195,7 @@ pub fn fill_init_buffer<F: FnOnce(&[u8])>(f: F) {
                     "fxsave [{membuf}]",
                     "mfence",
                     "mov esi, eax",
-                    "rdpmc",
+                    "rdtsc",
                     "fxrstor [{membuf}]",
                     "sub eax, esi",
                     out("ax") real_buf[x],

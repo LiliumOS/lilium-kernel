@@ -8,3 +8,5 @@ pub const AT_LILIUM_OS_BOOT_PART_MBR: usize = 97;
 pub const AT_LILIUM_OS_GDT_BASE: usize = 108;
 #[cfg(target_arch = "x86_64")]
 pub const AT_LILIUM_OS_IDT_BASE: usize = 109;
+
+pub const AT_LILIUM_MAX_KERNEL: usize = 127;

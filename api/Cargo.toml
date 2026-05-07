@@ -12,7 +12,11 @@ lilium-sys = { git = "https://github.com/LiliumOS/lilium-sys", version = "0.1.0"
     "error-num",
 ] }
 rand_core = "0.9.3"
-
+thingbuf = { version = "0.1", default-features = false, features = ["static"] }
+bytemuck = { version = "1.23", features = [
+    "latest_stable_rust",
+    "zeroable_unwind_fn",
+] }
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 x86_64 = "0.15.2"

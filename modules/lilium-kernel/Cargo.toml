@@ -5,6 +5,7 @@ edition.workspace = true
 
 [dependencies]
 los-api.workspace = true
+bytemuck.workspace = true
 # lc-crypto.workspace = true
 
 [lib]

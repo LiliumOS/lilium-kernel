@@ -24,6 +24,7 @@ static mut STACK: PageAlign<[u8; STACK_SIZE]> = PageAlign([0; STACK_SIZE]);
 
 const INTR_STACK_SIZE: usize = 0x1000;
 
+
 #[inline]
 pub fn portable_entry(postinit_cb: impl FnOnce()) -> ! {
     let base_addr = ld_so_impl::load_addr();
@@ -33,10 +34,10 @@ pub fn portable_entry(postinit_cb: impl FnOnce()) -> ! {
     };
 
     let Some(framebuffer_response) = FRAMEBUFFER_REQUEST.get_response() else {
-        hcf();
+        hcf()
     };
     let Some(framebuffer) = framebuffer_response.framebuffers().next() else {
-        hcf();
+        hcf()
     };
     let framebuffer = Framebuffer::from(framebuffer);
     let console = ConsoleOnGraphic::on_frame_buffer(framebuffer);
@@ -44,7 +45,7 @@ pub fn portable_entry(postinit_cb: impl FnOnce()) -> ! {
     println!("Hello, world!");
 
     let Some(memory_map_response) = MEMORY_MAP_REQUEST.get_response() else {
-        hcf();
+        hcf()
     };
     for entry in memory_map_response.entries() {
         let entry_type = entry.entry_type;

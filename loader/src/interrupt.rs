@@ -1,3 +1,5 @@
+use core::slice;
+
 use crate::prelude::*;
 
 use pc_keyboard::{DecodedKey, HandleControl, Keyboard, ScancodeSet1, layouts::Us104Key};
@@ -10,7 +12,7 @@ use x86_64::{
 
 use crate::{CONSOLE, apic::lapic};
 
-use los_api::arch::x86_64::*;
+use los_api::{arch::x86_64::*, rand::add_enthropy};
 
 #[derive(Clone, Copy)]
 #[repr(u8)]
@@ -68,8 +70,8 @@ pub static IDT: Lazy<InterruptDescriptorTable> = Lazy::new(|| {
             .set_handler_fn(exception_handler(HandlerHelpers::<"DF">::halt_exception))
             .set_stack_index(0);
     }
-    idt[InterruptIndex::Timer as u8].set_handler_fn(timer_interrupt);
-    idt[InterruptIndex::Keyboard as u8].set_handler_fn(keyboard_interrupt);
+    idt[InterruptIndex::Timer as u8].set_handler_fn(interrupt_handler(timer_interrupt));
+    idt[InterruptIndex::Keyboard as u8].set_handler_fn(interrupt_handler(keyboard_interrupt));
 
     return idt;
 });
@@ -80,30 +82,22 @@ static KEYBOARD: Mutex<Keyboard<Us104Key, ScancodeSet1>> = Mutex::new(Keyboard::
     HandleControl::Ignore,
 ));
 
-extern "x86-interrupt" fn double_fault(frame: InterruptStackFrame, _error_code: u64) -> ! {
-    panic!("double fault detected, stopping. stack frame: {frame:?}");
-}
+fn timer_interrupt(_frame: &mut InterruptStackFrame) {
+    let mut b: u32;
+    unsafe {
+        core::arch::asm!("rdtsc", out("eax") b, out("rdx") _, options(nomem, nostack, preserves_flags));
+    }
 
-extern "x86-interrupt" fn general_protection_fault(frame: InterruptStackFrame, error_code: u64) {
-    panic!("GP fault detected (error code: {error_code}), stopping. stack frame: {frame:?}");
-}
+    add_enthropy(&b.to_ne_bytes());
 
-extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, error_code: PageFaultErrorCode) {
-    panic!(
-        "page fault detected (error code: {error_code:?}) at address {:?}, stopping. stack frame: {frame:?}",
-        Cr2::read().unwrap()
-    );
-}
-
-extern "x86-interrupt" fn timer_interrupt(_frame: InterruptStackFrame) {
-    // No-op for now
     unsafe {
         lapic().end_of_interrupt();
     }
 }
 
-extern "x86-interrupt" fn keyboard_interrupt(_frame: InterruptStackFrame) {
+fn keyboard_interrupt(_frame: &mut InterruptStackFrame) {
     let scancode = unsafe { Port::new(0x60).read() };
+    add_enthropy(slice::from_ref(&scancode));
     let mut keyboard = KEYBOARD.lock();
     if let Ok(Some(key_event)) = keyboard.add_byte(scancode) {
         if let Some(decoded_key) = keyboard.process_keyevent(key_event) {
